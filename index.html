@@ -3,60 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Heeroz - Final Responsive Fix</title>
+    <title>Heeroz - Responsive Full Recovery</title>
     <style>
-        /* 1. 기본 레이아웃: 화면 잘림 방지 및 반응형 설정 */
+        /* 1. 기본 레이아웃: 화면 크기에 맞춰 유동적으로 변화 */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #000; color: #fff; overflow: hidden;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 게임 컨테이너: 상단 영역을 유연하게 사용하여 화면 잘림 해결 */
+        /* 게임 영역: 컨트롤러 제외 남은 공간을 100% 사용 (550px 제한 제거) */
         #game-wrapper {
             flex: 1; 
             width: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #111;
-            overflow: hidden;
+            background: #000;
         }
 
+        /* CSS aspect-ratio를 제거하고 Ruffle 내부 스케일링에 맡김 */
         #ruffle-container {
             width: 100%;
             height: 100%;
-            /* 원본 비율 유지 및 잘림 방지 */
-            max-width: 100vw;
-            max-height: 100%;
-            aspect-ratio: 550 / 400;
         }
 
-        /* 2. 모바일 컨트롤러 배치 수정: 간격과 위치 최적화 */
+        /* 2. 모바일 컨트롤러: 가상 키 배치 및 크기 최적화 */
         #mobile-controller {
             width: 100%;
-            height: 220px; /* 조작성을 위해 높이 확보 */
+            height: 200px; /* 터치하기 적당한 고정 높이 */
             display: flex;
-            justify-content: space-around; /* 방향키와 발사키를 양쪽으로 배치 */
+            justify-content: space-around;
             align-items: center;
             padding: 10px 20px;
             box-sizing: border-box;
-            background: #000;
+            background: #111;
             border-top: 1px solid #333;
         }
 
-        /* D-PAD: 십자 형태를 더 명확하게 개선 */
+        /* D-Pad: 버튼이 겹치지 않도록 너비 고정 및 그리드 정돈 */
         .d-pad { 
             display: grid; 
             grid-template-areas: 
                 ". up ." 
                 "left . right" 
                 ". down ."; 
-            gap: 8px; 
+            gap: 10px;
+            width: 180px; 
         }
 
         .btn {
-            width: 60px; height: 60px; 
+            width: 55px; height: 55px; 
             background: rgba(255,255,255,0.15);
             border: 2px solid #666; border-radius: 50%; color: #fff;
             display: flex; justify-content: center; align-items: center;
@@ -64,23 +61,20 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* 터치 시 시각적 피드백 */
-        .btn:active { background: rgba(255,255,255,0.4); transform: scale(0.95); }
+        /* 터치 시 피드백 */
+        .btn:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
         
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
         
-        /* 발사 버튼 크기 및 가독성 개선 */
         .fire { 
-            width: 100px; height: 100px; 
+            width: 90px; height: 90px; 
             border-radius: 50%; 
             background: rgba(255,0,0,0.3); 
             border: 3px solid #f00; 
-            font-weight: bold; 
-            font-size: 20px;
-            box-shadow: 0 0 15px rgba(255,0,0,0.2);
+            font-weight: bold; font-size: 20px;
         }
 
-        /* PC 환경에서는 컨트롤러 숨김 */
+        /* PC 환경: 컨트롤러 숨김 및 게임창 최대화 */
         @media (pointer: fine) { 
             #mobile-controller { display: none; } 
             #game-wrapper { height: 100vh; } 
@@ -117,9 +111,9 @@
             player.load({
                 url: "heeroz.swf",
                 backgroundColor: "#000000",
-                letterbox: "on",
-                scale: "showAll",
-                forceScale: true
+                letterbox: "on",   // 비율 유지하며 빈 공간 채움
+                scale: "showAll",  // 화면 잘림 방지 핵심 (영역 안에 다 보여줌)
+                forceScale: true   // 강제 스케일링
             }).then(() => {
                 player.focus();
             });
@@ -129,7 +123,7 @@
                 if(player) player.focus();
             });
 
-            // 사용자님이 만족하신 직접 주입(Direct Dispatch) 반응성 로직
+            // 사용자님이 만족하신 반응성 좋은 로직 (Direct Dispatch)
             const handleKey = (type, key, code) => {
                 if(!player) return;
                 const event = new KeyboardEvent(type, {
@@ -147,19 +141,12 @@
                 const key = btn.getAttribute('data-key');
                 const code = btn.getAttribute('data-code');
 
-                // 터치 이벤트 최적화
                 btn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     handleKey('keydown', key, code);
                 });
 
                 btn.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    handleKey('keyup', key, code);
-                });
-                
-                // 손가락이 버튼 밖으로 나갔을 때 키가 눌린 채 멈추는 현상 방지
-                btn.addEventListener('touchcancel', (e) => {
                     e.preventDefault();
                     handleKey('keyup', key, code);
                 });

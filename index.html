@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Heeroz - Mobile Optimized</title>
+    <title>Heeroz - Final Optimized</title>
     <style>
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
@@ -11,66 +11,72 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 게임 컨테이너: 가로 세로 비율 유지하며 화면에 맞게 조정 */
+        /* 1. 화면 잘림 해결: 상단 게임 영역을 유연하게 설정 */
         #game-wrapper {
             width: 100%;
-            height: 60vh; /* 상단 60%는 게임 화면 */
+            flex: 1; /* 남은 공간 모두 사용 */
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden; /* 영역 밖으로 나가는 것 방지 */
             background: #111;
         }
 
         #ruffle-container {
             width: 100%;
-            height: 100%;
-            max-width: 550px; /* 원본 크기 유지 */
-            max-height: 400px;
+            height: auto;
+            max-width: 100vw;
             aspect-ratio: 550 / 400; /* 원본 비율 유지 */
+            outline: none;
         }
 
-        /* 2. 모바일 컨트롤러: 하단 배치 */
+        /* 2. 하단 컨트롤러 영역 */
         #mobile-controller {
             width: 100%;
-            height: 40vh;
+            height: 35vh; /* 컨트롤러 높이 고정 */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
+            padding: 0 20px;
             box-sizing: border-box;
             background: #000;
+            z-index: 100;
         }
 
-        .d-pad { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 5px; }
+        .d-pad { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 10px; }
         .btn {
-            width: 50px; height: 50px; background: rgba(255,255,255,0.2);
-            border: 2px solid #555; border-radius: 10px; color: #fff;
+            width: 60px; height: 60px; background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; color: #fff;
             display: flex; justify-content: center; align-items: center;
-            font-size: 18px; user-select: none; touch-action: none;
+            font-size: 24px; user-select: none; touch-action: none;
         }
-        .btn:active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
+        /* 버튼 반응 효과 */
+        .btn.active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
         
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
-        .fire { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,0,0,0.4); border-color: #f00; font-weight: bold; }
+        .fire { width: 90px; height: 90px; background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5); font-weight: bold; }
 
-        /* PC에서는 컨트롤러 숨기기 */
-        @media (pointer: fine) { #mobile-controller { display: none; } #game-wrapper { height: 100%; } }
+        /* PC 모드: 컨트롤러 숨김 및 게임창 전체화 */
+        @media (pointer: fine) { 
+            #mobile-controller { display: none; } 
+            #game-wrapper { height: 100%; } 
+        }
     </style>
 </head>
 <body>
 
     <div id="game-wrapper">
-        <div id="ruffle-container"></div>
+        <div id="ruffle-container" tabindex="0"></div>
     </div>
 
     <div id="mobile-controller">
         <div class="d-pad">
-            <div class="btn up" data-key="ArrowUp" data-code="38">▲</div>
-            <div class="btn left" data-key="ArrowLeft" data-code="37">◀</div>
-            <div class="btn right" data-key="ArrowRight" data-code="39">▶</div>
-            <div class="btn down" data-key="ArrowDown" data-code="40">▼</div>
+            <div class="btn up" data-key="ArrowUp">▲</div>
+            <div class="btn left" data-key="ArrowLeft">◀</div>
+            <div class="btn right" data-key="ArrowRight">▶</div>
+            <div class="btn down" data-key="ArrowDown">▼</div>
         </div>
-        <div class="btn fire" data-key=" " data-code="32">FIRE</div>
+        <div class="btn fire" data-key=" ">FIRE</div>
     </div>
 
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
@@ -87,41 +93,34 @@
             player.load({
                 url: "heeroz.swf",
                 backgroundColor: "#000000",
-                letterbox: "on" // 화면 비율 유지하며 화면에 맞게 조정 (잘림 문제 해결)
+                letterbox: "on",  // 화면 비율 유지
+                scale: "showAll", // 잘림 방지 핵심 설정
+                forceScale: true
             });
 
-            // 포커스 문제 해결: 전역 키 이벤트 가로채기
-            document.addEventListener('click', () => {
-                player.focus();
-            });
+            // PC 포커스 문제 해결
+            document.addEventListener('click', () => container.focus());
 
-            // 가상 키보드 터치 문제 해결: 엔진에 직접 키 이벤트 주입
-            const handleKey = (type, key, code) => {
-                const event = new KeyboardEvent(type, {
-                    key: key,
-                    keyCode: parseInt(code),
-                    which: parseInt(code),
-                    bubbles: true,
-                    cancelable: true
-                });
-                player.dispatchEvent(event); // 윈도우가 아닌 플레이어 객체에 직접 전달
-            };
-
+            // 3. 사용자님이 만족하셨던 이전 키 로직 (Pointer Events) 복구
             const buttons = document.querySelectorAll('.btn');
             buttons.forEach(btn => {
                 const key = btn.getAttribute('data-key');
-                const code = btn.getAttribute('data-code');
-
-                // 터치 이벤트 최적화
-                btn.addEventListener('touchstart', (e) => {
+                
+                const handleStart = (e) => {
                     e.preventDefault();
-                    handleKey('keydown', key, code);
-                });
+                    btn.classList.add('active');
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true }));
+                };
 
-                btn.addEventListener('touchend', (e) => {
+                const handleEnd = (e) => {
                     e.preventDefault();
-                    handleKey('keyup', key, code);
-                });
+                    btn.classList.remove('active');
+                    window.dispatchEvent(new KeyboardEvent('keyup', { key: key, bubbles: true }));
+                };
+
+                btn.addEventListener('pointerdown', handleStart);
+                btn.addEventListener('pointerup', handleEnd);
+                btn.addEventListener('pointerleave', handleEnd); // 버튼 밖으로 나가도 취소
             });
         });
     </script>

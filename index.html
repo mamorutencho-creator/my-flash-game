@@ -3,19 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Heeroz - Final Recovery</title>
+    <title>Heeroz - Mobile Optimized</title>
     <style>
-        /* 1. 화면 잘림 방지: 반응형 레이아웃 */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #000; color: #fff; overflow: hidden;
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* 게임 컨테이너: 어떤 화면에서도 가로 세로 비율 유지하며 꽉 차게 */
+        /* 게임 컨테이너: 가로 세로 비율 유지하며 화면에 맞게 조정 */
         #game-wrapper {
             width: 100%;
-            height: 60%; /* 상단 60%는 게임 화면 */
+            height: 60vh; /* 상단 60%는 게임 화면 */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -27,32 +26,32 @@
             height: 100%;
             max-width: 550px; /* 원본 크기 유지 */
             max-height: 400px;
-            aspect-ratio: 550 / 400;
+            aspect-ratio: 550 / 400; /* 원본 비율 유지 */
         }
 
-        /* 2. 모바일 컨트롤러: 하단 40% 배치 */
+        /* 2. 모바일 컨트롤러: 하단 배치 */
         #mobile-controller {
             width: 100%;
-            height: 40%;
+            height: 40vh;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px;
+            padding: 10px;
             box-sizing: border-box;
             background: #000;
         }
 
-        .d-pad { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 10px; }
+        .d-pad { display: grid; grid-template-areas: ". up ." "left . right" ". down ."; gap: 5px; }
         .btn {
-            width: 60px; height: 60px; background: rgba(255,255,255,0.2);
-            border: 2px solid #555; border-radius: 15px; color: #fff;
+            width: 50px; height: 50px; background: rgba(255,255,255,0.2);
+            border: 2px solid #555; border-radius: 10px; color: #fff;
             display: flex; justify-content: center; align-items: center;
-            font-size: 20px; user-select: none; touch-action: none;
+            font-size: 18px; user-select: none; touch-action: none;
         }
         .btn:active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
         
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
-        .fire { width: 90px; height: 90px; border-radius: 50%; background: rgba(255,0,0,0.4); border-color: #f00; font-weight: bold; }
+        .fire { width: 80px; height: 80px; border-radius: 50%; background: rgba(255,0,0,0.4); border-color: #f00; font-weight: bold; }
 
         /* PC에서는 컨트롤러 숨기기 */
         @media (pointer: fine) { #mobile-controller { display: none; } #game-wrapper { height: 100%; } }
@@ -88,20 +87,15 @@
             player.load({
                 url: "heeroz.swf",
                 backgroundColor: "#000000",
-                letterbox: "on",
-                scale: "showAll",
-                forceScale: true
-            }).then(() => {
-                // 게임 로드 후 즉시 포커스 시도
-                player.focus();
+                letterbox: "on" // 화면 비율 유지하며 화면에 맞게 조정 (잘림 문제 해결)
             });
 
-            // 1. PC 키보드 문제 해결: 전역 키 이벤트 가로채기
+            // 포커스 문제 해결: 전역 키 이벤트 가로채기
             document.addEventListener('click', () => {
                 player.focus();
             });
 
-            // 2. 모바일 터치 문제 해결: 엔진에 직접 키 이벤트 주입
+            // 가상 키보드 터치 문제 해결: 엔진에 직접 키 이벤트 주입
             const handleKey = (type, key, code) => {
                 const event = new KeyboardEvent(type, {
                     key: key,

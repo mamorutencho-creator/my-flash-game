@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Heeroz - Perfect Response Fix</title>
     <style>
-        /* 1. 화면 구성: 사용자님께서 만족하신 Full Screen 레이아웃 유지 */
+        /* 1. 화면 구성 및 일본어 시스템 폰트 지정 */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background-color: #000; color: #fff; overflow: hidden;
             display: flex; flex-direction: column; align-items: center;
+            /* 일본어 렌더링을 위해 일본어 전용 시스템 폰트를 우선순위로 설정합니다 */
+            font-family: "MS Gothic", "Yu Gothic", "Meiryo", "맑은 고딕", sans-serif;
         }
 
         #game-wrapper {
@@ -26,6 +28,8 @@
             width: 100%;
             height: 100%;
             display: block;
+            /* 텍스트 렌더링 최적화 옵션 추가 */
+            text-rendering: optimizeLegibility;
         }
 
         /* 2. 컨트롤러: 터치 간섭 방지 설정 */
@@ -40,7 +44,6 @@
             background: #111;
             border-top: 1px solid #333;
             z-index: 10;
-            /* 중요: 브라우저의 기본 터치 동작(스크롤, 확대)을 완전히 차단 */
             touch-action: none; 
         }
 
@@ -50,7 +53,6 @@
             border: 2px solid #555; border-radius: 50%; color: #fff;
             display: flex; justify-content: center; align-items: center;
             font-size: 24px; user-select: none; 
-            /* 개별 버튼에도 터치 간섭 방지 */
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -97,7 +99,10 @@
                 backgroundColor: "#000000",
                 letterbox: "on",
                 scale: "showAll",
-                forceScale: true
+                forceScale: true,
+                /* 인코딩 안정화 및 외부 접근 허용 옵션 추가 */
+                wmode: "opaque",
+                allowScriptAccess: "always"
             }).then(() => {
                 player.style.width = "100%";
                 player.style.height = "100%";
@@ -107,8 +112,6 @@
             // 3. 입력 반응성 보강 로직
             const handleKey = (type, key, code) => {
                 if (!player) return;
-                
-                // 터치 즉시 게임에 포커스 강제 부여 (입력 누락 방지 핵심)
                 player.focus();
 
                 const event = new KeyboardEvent(type, {
@@ -119,7 +122,6 @@
                     cancelable: true
                 });
                 
-                // 플레이어 객체에 직접 전달
                 player.dispatchEvent(event);
             };
 
@@ -128,20 +130,18 @@
                 const key = btn.getAttribute('data-key');
                 const code = btn.getAttribute('data-code');
 
-                // 터치 시작: 지연 없는 즉각 반응
                 btn.addEventListener('touchstart', (e) => {
-                    e.preventDefault(); // 브라우저 제스처 차단
+                    e.preventDefault(); 
                     handleKey('keydown', key, code);
                 }, { passive: false });
 
-                // 터치 종료
                 const endTouch = (e) => {
                     e.preventDefault();
                     handleKey('keyup', key, code);
                 };
 
                 btn.addEventListener('touchend', endTouch, { passive: false });
-                btn.addEventListener('touchcancel', endTouch, { passive: false }); // 비정상 종료 대응
+                btn.addEventListener('touchcancel', endTouch, { passive: false });
             });
 
             document.addEventListener('mousedown', () => { if(player) player.focus(); });

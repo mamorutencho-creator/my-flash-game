@@ -3,24 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Heeroz Shooting Game - Mobile</title>
+    <title>Heeroz Shooting Game - Final</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; touch-action: none; }
-        #ruffle-container { width: 100%; max-width: 550px; aspect-ratio: 550/400; outline: none; position: relative; }
+        /* 1. 화면 잘림 해결: 전체 레이아웃 설정 */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background-color: #000; overflow: hidden; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            touch-action: none; /* 브라우저 기본 제스처 방지 */
+        }
+
+        /* 게임 컨테이너: 550:400 비율 유지 및 자동 크기 조절 */
+        #ruffle-container { 
+            width: 95vw; /* 화면 너비의 95% 사용 */
+            max-width: 550px; 
+            aspect-ratio: 550 / 400; 
+            outline: none; 
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 2. 모바일 컨트롤러 개선 */
+        .controller { 
+            position: fixed; bottom: env(safe-area-inset-bottom, 20px); 
+            width: 100%; max-width: 600px;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            padding: 0 30px 30px 30px; box-sizing: border-box; 
+            pointer-events: none; z-index: 100;
+        }
+
+        .d-pad, .action-btns { pointer-events: auto; }
         
-        /* 가상 버튼 스타일 */
-        .controller { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 100; }
-        .d-pad, .action-btns { display: grid; gap: 10px; pointer-events: auto; }
-        .d-pad { grid-template-areas: ". up ." "left . right" ". down ."; }
+        /* D-Pad 레이아웃: 터치 영역 겹침 방지 */
+        .d-pad { 
+            display: grid; 
+            grid-template-areas: ". up ." "left . right" ". down .";
+            gap: 8px;
+        }
         
-        .btn { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: white; display: flex; 
-               justify-content: center; align-items: center; font-weight: bold; user-select: none; -webkit-tap-highlight-color: transparent; }
-        .btn:active { background: rgba(255,255,255,0.5); }
+        .btn { 
+            width: 65px; height: 65px; 
+            background: rgba(255,255,255,0.15); 
+            border: 2px solid rgba(255,255,255,0.3); 
+            border-radius: 50%; color: white; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 24px; user-select: none; 
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+        
+        /* 버튼 활성화 시 시각적 피드백 */
+        .btn.active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
 
         .up { grid-area: up; } .left { grid-area: left; } .right { grid-area: right; } .down { grid-area: down; }
-        .space { width: 80px; height: 80px; background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5); border-radius: 50%; }
+        .space { width: 90px; height: 90px; background: rgba(255,0,0,0.25); border-color: rgba(255,0,0,0.4); font-weight: bold; }
 
-        /* PC에서는 버튼 숨기기 (선택 사항) */
+        /* PC에서는 컨트롤러 숨기기 */
         @media (pointer: fine) { .controller { display: none; } }
     </style>
 </head>
@@ -43,39 +81,50 @@
     <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
     <script>
         window.RufflePlayer = window.RufflePlayer || {};
+        let rufflePlayer = null;
+
         window.addEventListener("load", () => {
             const ruffle = window.RufflePlayer.newest();
-            const player = ruffle.createPlayer();
+            rufflePlayer = ruffle.createPlayer();
             const container = document.getElementById("ruffle-container");
-            container.appendChild(player);
+            container.appendChild(rufflePlayer);
 
-            player.load({
+            rufflePlayer.load({
                 url: "heeroz.swf",
                 backgroundColor: "#000000",
                 letterbox: "on",
-                unmuteOverlay: "hidden"
+                scale: "showAll", // 화면 크기에 맞게 자동 확장
+                forceScale: true
             });
 
-            // 가상 버튼 이벤트 처리
-            const buttons = document.querySelectorAll('.btn');
+            // 1. PC 키보드 포커스 문제 해결
+            // 화면 어디든 클릭하면 게임창에 포커스를 강제로 줍니다.
+            document.addEventListener('click', () => container.focus());
             
+            // 2. 모바일 오른쪽 키 및 인식 개선 (Pointer Events 사용)
+            const buttons = document.querySelectorAll('.btn');
             buttons.forEach(btn => {
                 const key = btn.getAttribute('data-key');
                 
-                // 터치 시작 시 키 눌림 신호 전송
-                btn.addEventListener('touchstart', (e) => {
+                const handleStart = (e) => {
                     e.preventDefault();
-                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
-                });
+                    btn.classList.add('active');
+                    // Ruffle에 키 누름 이벤트 직접 전달
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true }));
+                };
 
-                // 터치 종료 시 키 뗌 신호 전송
-                btn.addEventListener('touchend', (e) => {
+                const handleEnd = (e) => {
                     e.preventDefault();
-                    window.dispatchEvent(new KeyboardEvent('keyup', { key: key }));
-                });
+                    btn.classList.remove('active');
+                    window.dispatchEvent(new KeyboardEvent('keyup', { key: key, bubbles: true }));
+                };
+
+                // 터치와 마우스 모두 대응하는 Pointer 이벤트
+                btn.addEventListener('pointerdown', handleStart);
+                btn.addEventListener('pointerup', handleEnd);
+                btn.addEventListener('pointerleave', handleEnd); // 버튼 밖으로 손가락이 나갔을 때
             });
 
-            // 초기 포커스 설정
             container.focus();
         });
     </script>

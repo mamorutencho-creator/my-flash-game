@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Heeroz Flash Game</title>
+    <script src="https://waflash.vercel.app/release/waflash.js"></script>
+    <style>
+        body { margin: 0; background-color: black; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #waflashContainer { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="waflashContainer">
+        <canvas id="waflashCanvas"></canvas>
+    </div>
+    <script>
+        // 게임 설정: 파일 경로를 본인의 swf 파일명으로 지정
+        var config = {
+            swfUrl: "heeroz.swf" 
+        };
+        window.WAVolume = 0.5; // 기본 볼륨 설정
+        WAFlash.run(config);
+    </script>
+</body>
+</html>
